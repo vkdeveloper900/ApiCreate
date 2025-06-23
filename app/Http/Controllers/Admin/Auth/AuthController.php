@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Auth;
 
+use App\Events\UserLoggedIn;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -26,6 +27,8 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($validated)) {
+            $user = Auth::user();
+            event(new UserLoggedIn($user));
             return redirect()->route('admin.welcome')->with('success', 'Logged in successfully.');
         }
         return redirect()->back()->with('error', 'The provided credentials do not match our records.');

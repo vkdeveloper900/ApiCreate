@@ -21,8 +21,8 @@
         <div class="text-center">
             <h1 class="display-4">Welcome, {{ Auth::user()->name ?? 'User' }}!</h1>
             <p class="lead">You're now logged in.</p>
-            <a href="{{ route('admin.logOut') }}" class="btn btn-danger">Logout</a>
-            <a href="{{ route('admin.albums') }}" class="btn btn-info">View Albums</a>
+            <button onclick="onSyncAlbum()" class="btn btn-success">Fetch And Save Albums</button>
+            <a href="{{ route('admin.welcome') }}" class="btn btn-info">View Users</a>
         </div>
     </div>
 
@@ -64,52 +64,36 @@
                         <a href="{{ sortUrl('id', 'desc') }}">{!! sortArrow('id', 'desc', $currentSort, $currentOrder) !!}</a>
                     </th>
                     <th>
-                        Name
-                        <a href="{{ sortUrl('name', 'asc') }}">{!! sortArrow('name', 'asc', $currentSort, $currentOrder) !!}</a>
-                        <a href="{{ sortUrl('name', 'desc') }}">{!! sortArrow('name', 'desc', $currentSort, $currentOrder) !!}</a>
+                        Title
+                        <a href="{{ sortUrl('title', 'asc') }}">{!! sortArrow('title', 'asc', $currentSort, $currentOrder) !!}</a>
+                        <a href="{{ sortUrl('title', 'desc') }}">{!! sortArrow('title', 'desc', $currentSort, $currentOrder) !!}</a>
                     </th>
-                    <th>Email</th>
-                    <th>Registered</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>Created</th>
+                    <th>Photos</th>
                 </tr>
                 </thead>
                 <tbody>
-                @foreach ($users as $user)
+                @foreach ($albums as $album)
                     <tr>
                         <td>
-                            <input type="checkbox" name="selected_users[]" value="{{ $user->id }}">
+                            <input type="checkbox" name="selected_albums[]" value="{{ $album->id }}">
                         </td>
-                        <td>{{ $user->id }}</td>
-                        <td>{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
-                        <td>{{ $user->created_at->format('d-m-Y') }}</td>
+                        <td>{{ $album->id }}</td>
+                        <td>{{ $album->title }}</td>
+                        <td>{{ $album->created_at->format('d-m-Y') }}</td>
                         <td>
-                            <form method="POST" action="">
-                                @csrf
-                                <button type="submit" class="btn btn-sm {{ $user->status ? 'btn-success' : 'btn-secondary' }}">
-                                    {{ $user->status ? 'Active' : 'Inactive' }}
-                                </button>
-                            </form>
-                        </td>
-
-                        <td>
-                            <a href="" class="btn btn-sm btn-warning">✏️</a>
-                            <form method="POST" action="" style="display:inline-block;">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this user?')">🗑️</button>
-                            </form>
+                            <a href="{{ route('admin.album.photos', ['id'=>$album->id]) }}" class="btn btn-sm btn-primary">View</a>
                         </td>
                     </tr>
                 @endforeach
                 </tbody>
             </table>
+
         </form>
 
 
         <div class="d-flex justify-content-center mt-3">
-            {{ $users->appends(request()->all())->links('pagination::bootstrap-5') }}
+            {{ $albums->appends(request()->all())->links('pagination::bootstrap-5') }}
         </div>
     </div>
 
@@ -123,5 +107,44 @@
     </script>
 
 
+@endsection
+
+@section('scripts')
+    <script>
+        function onSyncAlbum() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "Sync Albums",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Sync Now!',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-outline-danger ml-1'
+                },
+                buttonsStyling: false
+            }).then(function (result) {
+                if (result.value) {
+                    $.get("{{ route('apiFetchAndSave') }}", {
+                    }, function (respo) {
+                        Swal.fire({
+                            icon: respo.success ? 'success' : 'error',
+                            title: respo.success ? 'Success!' : 'Failed!',
+                            text: respo.msg,
+                            customClass: {
+                                confirmButton: 'btn btn-success'
+                            }
+                        });
+
+                        if (respo.success) {
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 700);
+                        }
+                    });
+                }
+            });
+        }
+    </script>
 @endsection
 

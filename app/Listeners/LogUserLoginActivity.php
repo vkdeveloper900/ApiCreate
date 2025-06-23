@@ -25,10 +25,6 @@ class LogUserLoginActivity implements ShouldQueue
      */
     public function handle(UserLoggedIn $event): void
     {
-
-
-
-
             Mail::to($event->user->email)->queue(new LoginAlertMail($event->user));
     }
 }

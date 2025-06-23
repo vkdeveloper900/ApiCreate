@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Albums extends Model
+class Album extends Model
 {
-
     protected $fillable = [
-        'title',
+        'title'
     ];
 
     // One Album has many Photos

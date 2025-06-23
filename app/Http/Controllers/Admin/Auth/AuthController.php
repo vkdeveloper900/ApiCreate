@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin\Auth;
 
-use App\Events\UserLoggedIn;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendEmailJob;
+use App\Models\JobStatus;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -27,8 +29,13 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($validated)) {
+
             $user = Auth::user();
-            event(new UserLoggedIn($user));
+
+            SendEmailJob::dispatch($user);
+
+//            event(new UserLoggedIn($user));
+
             return redirect()->route('admin.welcome')->with('success', 'Logged in successfully.');
         }
         return redirect()->back()->with('error', 'The provided credentials do not match our records.');

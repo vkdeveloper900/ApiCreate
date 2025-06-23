@@ -28,11 +28,13 @@
 
     <div class="container mt-4">
         <form method="GET" class="mb-3 d-flex gap-2">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..." class="form-control w-25">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..."
+                   class="form-control w-25">
 
             <select name="perPage" class="form-select w-auto" onchange="this.form.submit()">
                 @foreach([10, 25, 50, 100] as $size)
-                    <option value="{{ $size }}" {{ request('perPage', 10) == $size ? 'selected' : '' }}>{{ $size }}</option>
+                    <option
+                        value="{{ $size }}" {{ request('perPage', 10) == $size ? 'selected' : '' }}>{{ $size }}</option>
                 @endforeach
             </select>
 
@@ -46,18 +48,9 @@
             @csrf
             @method('DELETE')
 
-            <div class="d-flex justify-content-between mb-2">
-                <div>
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete selected?')">
-                        Delete Selected
-                    </button>
-                </div>
-            </div>
-
             <table class="table table-bordered">
                 <thead>
                 <tr>
-                    <th><input type="checkbox" id="select-all"></th>
                     <th>
                         ID
                         <a href="{{ sortUrl('id', 'asc') }}">{!! sortArrow('id', 'asc', $currentSort, $currentOrder) !!}</a>
@@ -75,14 +68,12 @@
                 <tbody>
                 @foreach ($albums as $album)
                     <tr>
-                        <td>
-                            <input type="checkbox" name="selected_albums[]" value="{{ $album->id }}">
-                        </td>
                         <td>{{ $album->id }}</td>
                         <td>{{ $album->title }}</td>
                         <td>{{ $album->created_at->format('d-m-Y') }}</td>
                         <td>
-                            <a href="{{ route('admin.album.photos', ['id'=>$album->id]) }}" class="btn btn-sm btn-primary">View</a>
+                            <a href="{{ route('admin.album.photos', ['id'=>$album->id]) }}"
+                               class="btn btn-sm btn-primary">View</a>
                         </td>
                     </tr>
                 @endforeach
@@ -97,20 +88,18 @@
         </div>
     </div>
 
-    <script>
-        document.getElementById('select-all').addEventListener('change', function () {
-            let checkboxes = document.querySelectorAll('input[name="selected_users[]"]');
-            for (let checkbox of checkboxes) {
-                checkbox.checked = this.checked;
-            }
-        });
-    </script>
-
-
 @endsection
 
 @section('scripts')
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const jobId = localStorage.getItem('sync_job_id');
+            if (jobId) {
+                checkStatus(jobId);
+            }
+        });
+
+
         function onSyncAlbum() {
             Swal.fire({
                 title: 'Are you sure?',
@@ -124,27 +113,60 @@
                 },
                 buttonsStyling: false
             }).then(function (result) {
-                if (result.value) {
-                    $.get("{{ route('apiFetchAndSave') }}", {
-                    }, function (respo) {
-                        Swal.fire({
-                            icon: respo.success ? 'success' : 'error',
-                            title: respo.success ? 'Success!' : 'Failed!',
-                            text: respo.msg,
-                            customClass: {
-                                confirmButton: 'btn btn-success'
-                            }
-                        });
+                if (result.isConfirmed) {
+                    $.get("{{ route('apiFetchAndSave') }}", function (respo) {
 
                         if (respo.success) {
-                            setTimeout(function () {
-                                window.location.reload();
-                            }, 700);
+                            localStorage.setItem('sync_job_id', respo.data);
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Syncing Started...',
+                                text: respo.msg,
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                            checkStatus(respo.data);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed!',
+                                text: respo.msg,
+                                customClass: {
+                                    confirmButton: 'btn btn-danger'
+                                }
+                            });
                         }
                     });
                 }
             });
         }
+
+        let a = 0;
+        function checkStatus(jobId) {
+            let interval = setInterval(() => {
+
+                console.log('checkStatus Trigger' ,++a)
+
+                $.get("{{ route('job.chekStatus') }}", {
+                    jobId: jobId
+                }, function (data) {
+
+                    if (data.status === '{{ \App\Models\JobStatus::STATUS_COMPLETED }}') {
+                        clearInterval(interval);
+                        localStorage.removeItem('sync_job_id');
+                        toastr.success(data.message, 'Syncing Completed ');
+                    }
+
+                    if (data.status === '{{ \App\Models\JobStatus::STATUS_FAILED }}') {
+                        clearInterval(interval);
+                        localStorage.removeItem('sync_job_id');
+                        toastr.error(data.message, 'Syncing Failed');
+                    }
+                });
+            }, 5000);
+        }
+
     </script>
+
 @endsection
 

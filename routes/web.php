@@ -24,10 +24,6 @@ Route::middleware('auth:web')->prefix('admin')->group(function () {
     Route::get('albums', [WelcomeController::class, 'albums'])->name('admin.albums');
     Route::get('albums/photos', [WelcomeController::class, 'photos'])->name('admin.album.photos');
 
-
-
-
-
-
     Route::get('/import-albums-photos', [ApiDataController::class, 'fetchAndSave'])->name('apiFetchAndSave');
+    Route::get('job-check-status',[ApiDataController::class,'JobCheckStatus'])->name('job.chekStatus');
 });

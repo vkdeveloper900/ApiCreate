@@ -36,6 +36,7 @@ class WelcomeController extends Controller
 
     public function albums(Request $request)
     {
+
         $query = Album::query();
 
         // Search by title

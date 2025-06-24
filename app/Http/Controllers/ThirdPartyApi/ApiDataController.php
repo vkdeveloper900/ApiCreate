@@ -34,6 +34,9 @@ class ApiDataController extends Controller
 
         FetchAlbumsPhotos::dispatch($jobId);
 
+//        FetchAlbumsPhotos::dispatch($jobId)->delay(now()->addMinutes(15));
+
+
         return successResponse('Albums sync started in background.', $jobId);
     }
 

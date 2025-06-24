@@ -29,6 +29,8 @@ class FetchAlbumsPhotos implements ShouldQueue
      */
     public function handle(): void
     {
+        \Log::info('FetchAlbumsPhotos job auto-triggered at ' . now());
+
 
         $albumsResponse = Http::get('https://jsonplaceholder.typicode.com/albums');
 
